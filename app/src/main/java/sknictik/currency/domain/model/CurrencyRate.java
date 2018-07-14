@@ -9,4 +9,12 @@ public class CurrencyRate {
         this.currency = currency;
         this.exchangeRate = exchangeRate;
     }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public double getExchangeRate() {
+        return exchangeRate;
+    }
 }

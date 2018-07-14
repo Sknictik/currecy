@@ -2,11 +2,11 @@ package sknictik.currency.data.model;
 
 import java.util.Map;
 
-public class CurrenciesResponse {
+public class ExchangeRateResponse {
 
     private String base;
     private String date; //yyyy-MM-dd
-    private Map<String, Double> currencies;
+    private Map<String, Double> rates;
 
     public String getBase() {
         return base;
@@ -16,7 +16,7 @@ public class CurrenciesResponse {
         return date;
     }
 
-    public Map<String, Double> getCurrencies() {
-        return currencies;
+    public Map<String, Double> getRates() {
+        return rates;
     }
 }

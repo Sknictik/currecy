@@ -16,16 +16,17 @@ public class ExchangeRateCommand {
         this.webService = webService;
     }
 
-    public Observable<List<CurrencyRate>> getListOfCurrencyRatesObs() {
-        return webService.getCurrencies().map(currenciesResponse -> {
-            List<CurrencyRate> currencyRateList = new ArrayList<>();
-            if (currenciesResponse.getCurrencies() != null) {
-                for (Map.Entry<String, Double> entry : currenciesResponse.getCurrencies().entrySet()) {
-                    currencyRateList.add(new CurrencyRate(entry.getKey(), entry.getValue()));
-                }
-            }
-            return currencyRateList;
-        });
+    public Observable<List<CurrencyRate>> getListOfCurrencyRatesObs(String baseCurrency) {
+        return webService.getCurrencies(baseCurrency)
+                .map(currenciesResponse -> {
+                    List<CurrencyRate> currencyRateList = new ArrayList<>();
+                    if (currenciesResponse.getRates() != null) {
+                        for (Map.Entry<String, Double> entry : currenciesResponse.getRates().entrySet()) {
+                            currencyRateList.add(new CurrencyRate(entry.getKey(), entry.getValue()));
+                        }
+                    }
+                    return currencyRateList;
+                });
     }
 
 }
