@@ -12,6 +12,7 @@ import etr.android.reamp.mvp.ReampPresenter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import sknictik.currency.domain.command.ExchangeRateCommand;
 import sknictik.currency.domain.model.CurrencyRate;
 
@@ -51,12 +52,11 @@ public class CurrencyPresenter extends ReampPresenter<CurrencyStateModel> {
     }
 
     private void subscribeForExchangeRate() {
-        exchangeRateRequestSubscription = Observable.interval(1, TimeUnit.SECONDS)
-                .flatMap(v -> exchangeRateCommand.getListOfCurrencyRatesObs(getStateModel().baseCurrency.getCurrency())
-                        .onErrorResumeNext(throwable -> {
-                            onError(throwable);
-                            return Observable.empty();
-                        }))
+        if (exchangeRateRequestSubscription != null) {
+            exchangeRateRequestSubscription.unsubscribe();
+        }
+
+        exchangeRateRequestSubscription = getExchangeRateObs(getStateModel().baseCurrency.getCurrency())
                 .subscribe(new Subscriber<List<CurrencyRate>>() {
                     @Override
                     public void onCompleted() {
@@ -76,12 +76,19 @@ public class CurrencyPresenter extends ReampPresenter<CurrencyStateModel> {
                         } else {
                             getStateModel().currencyAmountList = calculateCurrencyAmountWithEstablishedOrder(currencyRates, getStateModel().baseCurrency);
                         }
-                        if (getStateModel().currencyAmountList != null && !getStateModel().currencyAmountList.isEmpty()) {
-                            getStateModel().baseCurrency = getStateModel().currencyAmountList.get(0);
-                        }
                         sendStateModel();
                     }
                 });
+    }
+
+    Observable<List<CurrencyRate>> getExchangeRateObs(String currency) {
+        return Observable.interval(1, TimeUnit.SECONDS)
+                .flatMap(v -> exchangeRateCommand.getListOfCurrencyRatesObs(currency)
+                        .onErrorResumeNext(throwable -> {
+                            onError(throwable);
+                            return Observable.empty();
+                        }))
+                .observeOn(AndroidSchedulers.mainThread());
     }
 
     private void onError(Throwable e) {
@@ -127,12 +134,17 @@ public class CurrencyPresenter extends ReampPresenter<CurrencyStateModel> {
         return null;
     }
 
-    void onCurrencyOrderChanged(CurrencyAmount newBaseCurrency) {
+    private void onBaseCurrencyUpdated(CurrencyAmount newBaseCurrency) {
         getStateModel().baseCurrency = newBaseCurrency;
+        subscribeForExchangeRate();
+    }
+
+    void onCurrencyOrderChanged(CurrencyAmount newBaseCurrency) {
+        onBaseCurrencyUpdated(newBaseCurrency);
     }
 
     void onCurrencyAmountChanged(CurrencyAmount updatedCurrency) {
-        getStateModel().baseCurrency = updatedCurrency;
+        onBaseCurrencyUpdated(updatedCurrency);
         getStateModel().currencyAmountList = calculateCurrencyAmountWithEstablishedOrder(latestCurrencyRates, getStateModel().baseCurrency);
         sendStateModel();
     }
